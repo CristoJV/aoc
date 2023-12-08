@@ -183,3 +183,6 @@ docker-compose.override.yaml
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Input files
+*input.txt
