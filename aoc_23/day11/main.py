@@ -8,14 +8,14 @@ def parse_lines(lines):
     return universe
 
 
-def compute_hamming_distance(positions):
+def compute_manhattan_distance(positions):
     """
-    Compute the hamming distance between all pairs of positions,
+    Compute the manhattan distance between all pairs of positions,
     considering no repeated pairs.
     """
     diffs = np.abs(positions[:, np.newaxis] - positions)
-    hamming_distances = np.sum(diffs, axis=2)
-    distances = np.triu(hamming_distances)
+    manhattan_distances = np.sum(diffs, axis=2)
+    distances = np.triu(manhattan_distances)
     return distances
 
 
@@ -77,7 +77,7 @@ def part(lines, expansion_factor):
         expansion_factor,
     )
 
-    distances = compute_hamming_distance(positions)
+    distances = compute_manhattan_distance(positions)
     total_distance = np.sum(distances)
     return total_distance
 
