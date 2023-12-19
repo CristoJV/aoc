@@ -62,10 +62,7 @@ def parse_lines(lines):
     return workflows, parts
 
 
-def part_1(
-    lines,
-    part,
-):
+def part_1(lines):
     workflows, parts = parse_lines(lines)
     total_score = 0
 
@@ -104,11 +101,128 @@ def part_1(
     return total_score
 
 
+def create_graph(workflows):
+    previous_nodes = {}
+    cost = {}
+    open_set = set()
+    open_set.add("in")
+
+    a_count = 0
+    while len(open_set) > 0:
+        node = open_set.pop()
+        # Get the conditions for the current node
+        accumulated_conditions = []
+        for conditions in workflows[node]:
+            key = conditions["key"]
+            condition = conditions["condition"]
+            oposite_condition = "<=" if condition == ">" else ">="
+            value = conditions["value"]
+            next_node = conditions["next"]
+
+            if next_node == "A":
+                a_count += 1
+                next_node = f"{a_count}"
+                previous_nodes[next_node] = node
+                cost[next_node] = (
+                    accumulated_conditions + [(key, condition, value)]
+                    if condition is not None
+                    else accumulated_conditions
+                )
+                accumulated_conditions.append((key, oposite_condition, value))
+                continue
+
+            elif next_node == "R":
+                accumulated_conditions.append((key, oposite_condition, value))
+                continue
+
+            previous_nodes[next_node] = node
+            if value is None:
+                cost[next_node] = accumulated_conditions
+            else:
+                cost[next_node] = accumulated_conditions + [
+                    (key, condition, value)
+                ]
+                accumulated_conditions.append((key, oposite_condition, value))
+            open_set.add(next_node)
+    return previous_nodes, cost
+
+
+def part_2(lines):
+    workflows, parts = parse_lines(lines)
+    previous_nodes, cost = create_graph(workflows)
+    a_count = 1
+    total_valid = 0
+    while str(a_count) in previous_nodes:
+        a_id = str(a_count)
+        accumulated_cost = cost[a_id]
+        node = a_id
+        while previous_nodes[node] != "in":
+            node = previous_nodes[node]
+            accumulated_cost.extend(cost[node])
+        a_range = [1, 4000]
+        x_range = [1, 4000]
+        s_range = [1, 4000]
+        m_range = [1, 4000]
+
+        for a_cost in accumulated_cost:
+            key = a_cost[0]
+            if key is None:
+                continue
+            condition = a_cost[1]
+            value = a_cost[2]
+            if condition == ">":
+                if key == "a":
+                    a_range[0] = max(a_range[0], value + 1)
+                elif key == "x":
+                    x_range[0] = max(x_range[0], value + 1)
+                elif key == "s":
+                    s_range[0] = max(s_range[0], value + 1)
+                elif key == "m":
+                    m_range[0] = max(m_range[0], value + 1)
+            elif condition == ">=":
+                if key == "a":
+                    a_range[0] = max(a_range[0], value)
+                elif key == "x":
+                    x_range[0] = max(x_range[0], value)
+                elif key == "s":
+                    s_range[0] = max(s_range[0], value)
+                elif key == "m":
+                    m_range[0] = max(m_range[0], value)
+            elif condition == "<":
+                if key == "a":
+                    a_range[1] = min(a_range[1], value - 1)
+                elif key == "x":
+                    x_range[1] = min(x_range[1], value - 1)
+                elif key == "s":
+                    s_range[1] = min(s_range[1], value - 1)
+                elif key == "m":
+                    m_range[1] = min(m_range[1], value - 1)
+            elif condition == "<=":
+                if key == "a":
+                    a_range[1] = min(a_range[1], value)
+                elif key == "x":
+                    x_range[1] = min(x_range[1], value)
+                elif key == "s":
+                    s_range[1] = min(s_range[1], value)
+                elif key == "m":
+                    m_range[1] = min(m_range[1], value)
+
+        valid = (
+            (a_range[1] - a_range[0] + 1)
+            * (x_range[1] - x_range[0] + 1)
+            * (s_range[1] - s_range[0] + 1)
+            * (m_range[1] - m_range[0] + 1)
+        )
+        a_count += 1
+        total_valid += valid
+    return total_valid
+
+
 if __name__ == "__main__":
     with open("input.txt") as f:
         lines = f.readlines()
 
     logging.basicConfig(level=logging.INFO)
 
-    logging.info(f"Part 1: {part_1(lines, part=1)}")
-    # logging.info(f"Part 2: {part_2(lines)}")
+    logging.info(f"Part 1: {part_1(lines)}")
+    logging.info(f"Part 2: {part_2(lines)}")
