@@ -118,6 +118,6 @@ if __name__ == "__main__":
     with open("input.txt", encoding="utf8") as f:
         input_lines = f.readlines()
         print(f"First part: {p1(input_lines)}")
-        # print(f"Second part: {p2(input_lines)}")
+        print(f"Second part: {p2(input_lines)}")
         print(f"First part using complex: {p1_complex(input_lines)}")
         print(f"Second part using complex: {p2_complex(input_lines)}")
