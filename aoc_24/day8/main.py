@@ -12,30 +12,59 @@ def parse_map(lines: List[str]):
     antenna_map = {}
     for y, line in enumerate(lines):
         for x, c in enumerate(line.strip()):
-            if c.isnumeric and c.isalpha and c not in (".", "#"):
-                if antenna_map.get(c, None) is None:
-                    antenna_map[c] = [(x, y)]
-                else:
-                    antenna_map[c].append((x, y))
+            if c.isalnum() and c not in (".", "#"):
+                antenna_map.setdefault(c, []).append((x, y))
     return (
         antenna_map,
         (len(lines[0].strip()), len(lines)),
     )
 
 
-def p1(lines: List[str]):
-    antenna_map, (width, height) = parse_map(lines)
+def get_antinodes(
+    pos1,
+    pos2,
+    width,
+    height,
+    count_antenna_positions: bool = False,
+    unbounded: bool = False,
+):
+    increment = (pos2[0] - pos1[0], pos2[1] - pos1[1])
+    keep_left = True
+    keep_right = True
+    antinodes = []
 
-    def get_antinodes(pos1, pos2, width, height):
-        increment = (pos2[0] - pos1[0], pos2[1] - pos1[1])
-        x_left, y_left = (pos2[0] + increment[0], pos2[1] + increment[1])
-        x_right, y_right = (pos1[0] - increment[0], pos1[1] - increment[1])
-        antinodes = []
-        if 0 <= x_left < width and 0 <= y_left < height:
-            antinodes.append((x_left, y_left))
-        if 0 <= x_right < width and 0 <= y_right < height:
-            antinodes.append((x_right, y_right))
-        return antinodes
+    iteration = 0 if count_antenna_positions else 1
+
+    while keep_left or keep_right:
+
+        if keep_left:
+            x_left = pos2[0] + iteration * increment[0]
+            y_left = pos2[1] + iteration * increment[1]
+
+            if 0 <= x_left < width and 0 <= y_left < height:
+                antinodes.append((x_left, y_left))
+            else:
+                keep_left = False
+
+        if keep_right:
+            x_right = pos1[0] - iteration * increment[0]
+            y_right = pos1[1] - iteration * increment[1]
+
+            if 0 <= x_right < width and 0 <= y_right < height:
+                antinodes.append((x_right, y_right))
+            else:
+                keep_right = False
+
+        iteration += 1
+        if not unbounded:
+            break
+    return antinodes
+
+
+def count_antinodes(
+    lines: List[str], count_antenna_positions=False, unbounded=False
+):
+    antenna_map, (width, height) = parse_map(lines)
 
     all_antinodes = []
 
@@ -44,57 +73,26 @@ def p1(lines: List[str]):
             for jdx, pos2 in enumerate(antenna_positions):
                 if idx < jdx:
                     antinodes = get_antinodes(
-                        pos1, pos2, width=width, height=height
+                        pos1,
+                        pos2,
+                        width=width,
+                        height=height,
+                        count_antenna_positions=count_antenna_positions,
+                        unbounded=unbounded,
                     )
                     all_antinodes.extend(antinodes)
 
     return len(set(all_antinodes))
+
+
+def p1(lines: List[str]):
+    return count_antinodes(
+        lines, count_antenna_positions=False, unbounded=False
+    )
 
 
 def p2(lines: List[str]):
-    def get_antinodes(pos1, pos2, width, height):
-        increment = (pos2[0] - pos1[0], pos2[1] - pos1[1])
-
-        iteration = 0
-        continue_iterating_left = True
-        continue_iterating_right = True
-        antinodes = []
-        while continue_iterating_left or continue_iterating_right:
-            if continue_iterating_left:
-                x_left, y_left = (
-                    pos2[0] + iteration * increment[0],
-                    pos2[1] + iteration * increment[1],
-                )
-                if 0 <= x_left < width and 0 <= y_left < height:
-                    antinodes.append((x_left, y_left))
-                else:
-                    continue_iterating_left = False
-            if continue_iterating_right:
-                x_right, y_right = (
-                    pos1[0] - iteration * increment[0],
-                    pos1[1] - iteration * increment[1],
-                )
-                if 0 <= x_right < width and 0 <= y_right < height:
-                    antinodes.append((x_right, y_right))
-                else:
-                    continue_iterating_right = False
-            iteration += 1
-        return antinodes
-
-    antenna_map, (width, height) = parse_map(lines)
-
-    all_antinodes = []
-
-    for _, antenna_positions in antenna_map.items():
-        for idx, pos1 in enumerate(antenna_positions):
-            for jdx, pos2 in enumerate(antenna_positions):
-                if idx < jdx:
-                    antinodes = get_antinodes(
-                        pos1, pos2, width=width, height=height
-                    )
-                    all_antinodes.extend(antinodes)
-
-    return len(set(all_antinodes))
+    return count_antinodes(lines, count_antenna_positions=True, unbounded=True)
 
 
 if __name__ == "__main__":
