@@ -52,7 +52,49 @@ def p1(lines: List[str]):
 
 
 def p2(lines: List[str]):
-    pass
+    def get_antinodes(pos1, pos2, width, height):
+        increment = (pos2[0] - pos1[0], pos2[1] - pos1[1])
+
+        iteration = 0
+        continue_iterating_left = True
+        continue_iterating_right = True
+        antinodes = []
+        while continue_iterating_left or continue_iterating_right:
+            if continue_iterating_left:
+                x_left, y_left = (
+                    pos2[0] + iteration * increment[0],
+                    pos2[1] + iteration * increment[1],
+                )
+                if 0 <= x_left < width and 0 <= y_left < height:
+                    antinodes.append((x_left, y_left))
+                else:
+                    continue_iterating_left = False
+            if continue_iterating_right:
+                x_right, y_right = (
+                    pos1[0] - iteration * increment[0],
+                    pos1[1] - iteration * increment[1],
+                )
+                if 0 <= x_right < width and 0 <= y_right < height:
+                    antinodes.append((x_right, y_right))
+                else:
+                    continue_iterating_right = False
+            iteration += 1
+        return antinodes
+
+    antenna_map, (width, height) = parse_map(lines)
+
+    all_antinodes = []
+
+    for _, antenna_positions in antenna_map.items():
+        for idx, pos1 in enumerate(antenna_positions):
+            for jdx, pos2 in enumerate(antenna_positions):
+                if idx < jdx:
+                    antinodes = get_antinodes(
+                        pos1, pos2, width=width, height=height
+                    )
+                    all_antinodes.extend(antinodes)
+
+    return len(set(all_antinodes))
 
 
 if __name__ == "__main__":
