@@ -52,8 +52,55 @@ def p1(lines: List[str]):
     return checksum
 
 
+def get_slots_info(disc_map):
+    data_slots = {}
+    empty_slots = {}
+    block_index = 0
+    for i, block_slots in enumerate(disc_map):
+        block_slots = int(block_slots)
+        if (i % 2) == 0:
+            data_slots[i // 2] = [block_index, block_slots]
+            block_index += block_slots
+        if (i % 2) == 1:
+            empty_slots[i // 2] = [block_index, block_slots]
+            block_index += block_slots
+    return data_slots, empty_slots
+
+
 def p2(lines: List[str]):
-    pass
+
+    data_slots, empty_slots = get_slots_info(lines[0].strip())
+    for data_id, data_slot in sorted(data_slots.items(), reverse=True):
+        # pylint: disable=C0201,C0206
+        for empty_slot_idx in empty_slots.keys():
+            empty_slot = empty_slots[empty_slot_idx]
+            if data_slot[0] < empty_slot[0]:
+                break
+            if data_slot[1] <= empty_slot[1]:
+                # Update the data indexes
+                data_slot[0] = empty_slot[0]
+                # Update the empty_slot indexes and len
+                rest_slots = empty_slot[1] - data_slot[1]
+                if rest_slots <= 0:
+                    # print(f"Deleting empty slot {empty_slot_idx}")
+                    empty_slots.pop(empty_slot_idx)
+                else:
+                    new_block_index = empty_slot[0] + data_slot[1]
+                    empty_slots[empty_slot_idx] = (
+                        new_block_index,
+                        rest_slots,
+                    )
+                break
+    checksum = 0
+    for data_id, data_slot in data_slots.items():
+        value = sum(
+            map(
+                (data_id).__mul__,
+                range(data_slot[0], data_slot[0] + data_slot[1]),
+            )
+        )
+        checksum += value
+    return checksum
 
 
 if __name__ == "__main__":
