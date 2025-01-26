@@ -84,6 +84,16 @@ def p1(lines: List[str]):
     return trail_ends_count
 
 
+def p2(lines: List[str]):
+    topographic_map, trail_heads, limits = parse_topographic_map(lines)
+    total_paths: List[List[complex]] = []
+    for trail_head in trail_heads:
+        paths = find_paths([trail_head], topographic_map, limits)
+        total_paths.extend(paths)
+
+    return len(total_paths)
+
+
 if __name__ == "__main__":
     with open("input.txt", encoding="utf8") as f:
         input_lines = f.readlines()
