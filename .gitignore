@@ -186,3 +186,4 @@ docker-compose.override.yaml
 
 # Input files
 *input.txt
+*test.txt
