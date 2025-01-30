@@ -43,12 +43,66 @@ def p1(lines: List[str]):
     return total
 
 
+def depth_first_search(
+    first_operand: int,
+    next_operands: List[int],
+    operator: Callable,
+    expected_result: int,
+    available_operators: List[Callable],
+) -> Tuple[bool, int]:
+    if len(next_operands) == 0:
+        if first_operand == expected_result:
+            return True, first_operand
+        return False, first_operand
+    # saved_first_operand = first_operand
+    next_operands_copy = next_operands.copy()
+    next_operand = next_operands_copy.pop(0)
+    first_operand = operator(first_operand, next_operand)
+    # print(
+    #     f"{saved_first_operand} {'x' if operator==mul else '+'} {next_operand} = {first_operand}"
+    # )
+    for operator_i in available_operators:
+        success, result = depth_first_search(
+            first_operand,
+            next_operands_copy,
+            operator_i,
+            expected_result,
+            available_operators,
+        )
+        if success:
+            return success, result
+
+    return False, result
+
+
 def p2(lines: List[str]):
-    pass
+    results, operands = parse_equations(lines)
+    total = 0
+
+    def concatenation(first_operand: int, second_operand: int):
+        return int(str(first_operand) + str(second_operand))
+
+    for equation_idx, expected_result in enumerate(results):
+        next_operands = operands[equation_idx]
+        first_operand = next_operands.pop(0)
+        available_operators = [add, mul, concatenation]
+        # print(f"Evaluating: {expected_result}")
+        for operator in available_operators:
+            success, result = depth_first_search(
+                first_operand,
+                next_operands,
+                operator=operator,
+                expected_result=expected_result,
+                available_operators=available_operators,
+            )
+            if success:
+                total += result
+                break
+    return total
 
 
 if __name__ == "__main__":
-    testing: bool = True
+    testing: bool = False
     with open(
         "input.txt" if not testing else "test.txt", encoding="utf8"
     ) as f:
