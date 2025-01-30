@@ -8,7 +8,6 @@ from typing import Callable, List, Tuple
 
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
-from profile import timeit
 
 
 def parse_equations(lines: List[str]) -> Tuple[List[int], List[List[int]]]:
@@ -22,27 +21,6 @@ def parse_equations(lines: List[str]) -> Tuple[List[int], List[List[int]]]:
     return results, operands
 
 
-def p1(lines: List[str]):
-    results, operands = parse_equations(lines)
-    total = 0
-    for idx, result in enumerate(results):
-        operands_i = operands[idx]
-        num_operators = len(operands_i) - 1
-        first_operand = operands_i[0]
-        for i in range(2**num_operators):
-            operation_result = first_operand
-            for j in range(0, num_operators):
-                operator = add if i & (1 << j) else mul
-
-                operation_result = reduce(
-                    operator, [operation_result, operands_i[j + 1]]
-                )
-            if operation_result == result:
-                total += result
-                break
-    return total
-
-
 def depth_first_search(
     first_operand: int,
     next_operands: List[int],
@@ -54,13 +32,9 @@ def depth_first_search(
         if first_operand == expected_result:
             return True, first_operand
         return False, first_operand
-    # saved_first_operand = first_operand
     next_operands_copy = next_operands.copy()
     next_operand = next_operands_copy.pop(0)
     first_operand = operator(first_operand, next_operand)
-    # print(
-    #     f"{saved_first_operand} {'x' if operator==mul else '+'} {next_operand} = {first_operand}"
-    # )
     for operator_i in available_operators:
         success, result = depth_first_search(
             first_operand,
@@ -75,18 +49,12 @@ def depth_first_search(
     return False, result
 
 
-def p2(lines: List[str]):
+def solve(lines: List[str], available_operators: List[Callable]):
     results, operands = parse_equations(lines)
     total = 0
-
-    def concatenation(first_operand: int, second_operand: int):
-        return int(str(first_operand) + str(second_operand))
-
     for equation_idx, expected_result in enumerate(results):
         next_operands = operands[equation_idx]
         first_operand = next_operands.pop(0)
-        available_operators = [add, mul, concatenation]
-        # print(f"Evaluating: {expected_result}")
         for operator in available_operators:
             success, result = depth_first_search(
                 first_operand,
@@ -98,7 +66,19 @@ def p2(lines: List[str]):
             if success:
                 total += result
                 break
+
     return total
+
+
+def p1(lines: List[str]):
+    return solve(lines, available_operators=[add, mul])
+
+
+def p2(lines: List[str]):
+    def concatenation(first_operand: int, second_operand: int):
+        return int(str(first_operand) + str(second_operand))
+
+    return solve(lines, available_operators=[add, mul, concatenation])
 
 
 if __name__ == "__main__":
