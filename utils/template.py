@@ -18,7 +18,10 @@ def p2(lines: List[str]):
 
 
 if __name__ == "__main__":
-    with open("input.txt", encoding="utf8") as f:
+    testing: bool = False
+    with open(
+        "input.txt" if not testing else "test.txt", encoding="utf8"
+    ) as f:
         input_lines = f.readlines()
         print(f"First part: {p1(input_lines)}")
         print(f"Second part: {p2(input_lines)}")
