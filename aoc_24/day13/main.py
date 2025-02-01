@@ -47,7 +47,16 @@ def p1(lines: List[str]):
 
 
 def p2(lines: List[str]):
-    pass
+    prices = parse_prices(lines)
+    tokens = 0
+    for price in prices:
+        price[-2] += 1e13
+        price[-1] += 1e13
+        status, x, y = check_if_unique_solution(*price)
+        if status and all(check_if_integer(num) for num in [x, y]):
+            tokens_i = x * 3 + y
+            tokens += tokens_i
+    return int(tokens)
 
 
 if __name__ == "__main__":
