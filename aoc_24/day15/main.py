@@ -2,147 +2,99 @@
 # pylint: disable=C0413,E0611
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
 
+MOVEMENT_MAP: Dict[str, complex] = {
+    ">": 1,
+    "<": -1,
+    "^": -1j,
+    "v": 1j,
+}
 
-def parse_warehouse(lines: List[str]):
-    lines = "".join(lines)
-    lines = lines.split("\n\n")
-    warehouse, movements = lines[0], lines[1]
-    warehouse_rows = warehouse.split("\n")
+
+def parse_movement_instructions(movements_str: str) -> List[complex]:
+    """
+    Parse the movements string into a list of complex offsets
+    based on MOVEMENT_MAP.
+    """
+    return [MOVEMENT_MAP[ch] for ch in movements_str if ch in MOVEMENT_MAP]
+
+
+def parse_warehouse(
+    lines: List[str], expanded: bool = False
+) -> Tuple[Dict[complex, str], List[complex], complex]:
+    full_text = "".join(lines).split("\n\n")
+    warehouse_str, movement_instructions_str = full_text[0], full_text[1]
+
+    warehouse_rows = warehouse_str.split("\n")
+
+    # Parse movements
+    movement_instructions = parse_movement_instructions(
+        movement_instructions_str
+    )
+
     warehouse_map: Dict[complex, str] = {}
-    robot_loc = 0
-    height = len(warehouse_rows)
-    width = len(warehouse_rows[0])
-    for j, row in enumerate(warehouse_rows):
-        for i, block in enumerate(list(row)):
-            if block == "@":
-                robot_loc = i + 1j * j
-            warehouse_map[i + 1j * j] = block
-    parsed_movements: List[complex] = []
-    for movement in movements:
-        if movement == ">":
-            parsed_movements.append(1)
-        elif movement == "<":
-            parsed_movements.append(-1)
-        elif movement == "v":
-            parsed_movements.append(1j)
-        elif movement == "^":
-            parsed_movements.append(-1j)
-        else:
-            print(f"Unrecognized movement {movement}")
-    return warehouse_map, parsed_movements, robot_loc, width, height
+    robot_pos: complex = 0
+
+    if not expanded:
+        # Standard parsing
+        for j, row in enumerate(warehouse_rows):
+            for i, block in enumerate(row):
+                pos = complex(i, j)
+                warehouse_map[pos] = block
+                if block == "@":
+                    robot_pos = pos
+    else:
+        # Expanded parsing
+        for j, row in enumerate(warehouse_rows):
+            for i, block in enumerate(row):
+                left_pos = complex(i * 2, j)
+                right_pos = left_pos + 1
+
+                if block == "@":
+                    warehouse_map[left_pos] = "@"
+                    warehouse_map[right_pos] = "."
+                    robot_pos = left_pos
+                elif block == "O":
+                    warehouse_map[left_pos] = "["
+                    warehouse_map[right_pos] = "]"
+                else:
+                    warehouse_map[left_pos] = block
+                    warehouse_map[right_pos] = block
+
+    return warehouse_map, movement_instructions, robot_pos
 
 
-WALL = "#"
-BOX = "O"
-
-
-def parse_warehouse_expanded(lines: List[str]):
-    lines = "".join(lines)
-    lines = lines.split("\n\n")
-    warehouse, movements = lines[0], lines[1]
-    warehouse_rows = warehouse.split("\n")
-    warehouse_map: Dict[complex, str] = {}
-    robot_loc = 0
-    height = len(warehouse_rows)
-    width = len(warehouse_rows[0]) * 2
-    for j, row in enumerate(warehouse_rows):
-        for i, block in enumerate(list(row)):
-            if block == "@":
-                robot_loc = i * 2 + 1j * j
-                warehouse_map[i * 2 + 1j * j] = block
-                warehouse_map[i * 2 + 1 + 1j * j] = "."
-            elif block == "O":
-                warehouse_map[i * 2 + 1j * j] = "["
-                warehouse_map[i * 2 + 1 + 1j * j] = "]"
-            elif block in ["#", "."]:
-                warehouse_map[i * 2 + 1j * j] = block
-                warehouse_map[i * 2 + 1 + 1j * j] = block
-    parsed_movements: List[complex] = []
-    for movement in movements:
-        if movement == ">":
-            parsed_movements.append(1)
-        elif movement == "<":
-            parsed_movements.append(-1)
-        elif movement == "v":
-            parsed_movements.append(1j)
-        elif movement == "^":
-            parsed_movements.append(-1j)
-        else:
-            print(f"Unrecognized movement {movement}")
-    return warehouse_map, parsed_movements, robot_loc, width, height
-
-
-def step(warehouse: Dict[complex, str], pos, movement):
+def step(warehouse: Dict[complex, str], pos, movement) -> List[complex]:
     next_pos = pos + movement
-    next_block = warehouse[next_pos]
-    if next_block == "#":
-        return False
-    elif next_block == ".":
-        return True
-    elif next_block == "O":
-        continue_pos = step(warehouse, next_pos, movement)
-        if continue_pos:
-            warehouse[next_pos] = "."
-            warehouse[next_pos + movement] = "O"
-            return True
+    next_block = warehouse.get(next_pos, "#")
 
-    return False
-
-
-def plot_map(warehouse, width, height):
-    img = np.zeros((height, width, 3))
-    for pos, block in warehouse.items():
-        if block == "#":
-            img[int(pos.imag), int(pos.real), :] = [1, 0, 0]
-        elif block == "O":
-            img[int(pos.imag), int(pos.real), :] = [1, 1, 0]
-        elif block == "@":
-            img[int(pos.imag), int(pos.real), :] = [0, 0, 1]
-        elif block in ["["]:
-            img[int(pos.imag), int(pos.real), :] = [0, 1, 0]
-        elif block in ["]"]:
-            img[int(pos.imag), int(pos.real), :] = [1, 1, 0]
-        elif block == ".":
-            img[int(pos.imag), int(pos.real), :] = [1, 1, 1]
-    return img
-
-
-def p1(lines: List[str]):
-    warehouse, movements, robot_loc, width, height = parse_warehouse(lines)
-    for movement in movements:
-        continue_moving = step(warehouse, robot_loc, movement)
-        if continue_moving:
-            warehouse[robot_loc] = "."
-            robot_loc += movement
-            warehouse[robot_loc] = "@"
-    boxes = [k for k, v in warehouse.items() if v == "O"]
-    gps_coordinates = sum([100 * box.imag + box.real for box in boxes])
-    return gps_coordinates
-
-
-def step_expanded(warehouse: Dict[complex, str], pos, movement):
-    next_pos = pos + movement
-    next_block = warehouse[next_pos]
     if next_block == "#":
         return False, []
-    elif next_block == ".":
+
+    if next_block == ".":
         return True, [pos]
-    elif next_block in ["[", "]"]:
+
+    if next_block == "O":
+        can_move, positions_to_update = step(warehouse, next_pos, movement)
+        if can_move:
+            positions_to_update.append(pos)
+            return True, positions_to_update
+        return False, []
+
+    if next_block in ["[", "]"]:
         if movement in [1, -1]:
-            continue_pos, blocks_to_update = step_expanded(
-                warehouse, next_pos, movement
-            )
-            if continue_pos:
-                blocks_to_update.append(pos)
-                return True, blocks_to_update
-        elif movement in [1j, -1j]:
+            can_move, positions_to_update = step(warehouse, next_pos, movement)
+            if can_move:
+                positions_to_update.append(pos)
+                return True, positions_to_update
+            return False, []
+        else:  # movement in [1j, -1j] (down or up)
             if next_block == "[":
                 next_pos_left = next_pos
                 next_pos_right = next_pos + 1
@@ -150,50 +102,110 @@ def step_expanded(warehouse: Dict[complex, str], pos, movement):
                 next_pos_left = next_pos - 1
                 next_pos_right = next_pos
 
-            continue_left_pos, blocks_to_update_left = step_expanded(
+            can_move_left, positions_to_update_left = step(
                 warehouse, next_pos_left, movement
             )
-            continue_right_pos, blocks_to_update_right = step_expanded(
+            can_move_right, positions_to_update_right = step(
                 warehouse, next_pos_right, movement
             )
 
-            if continue_left_pos and continue_right_pos:
-                blocks_to_update_left.extend(blocks_to_update_right)
-                blocks_to_update_left = list(set(blocks_to_update_left))
-                blocks_to_update_left.append(pos)
-                return True, blocks_to_update_left
+            if can_move_left and can_move_right:
+                positions_to_update = list(
+                    set(positions_to_update_left + positions_to_update_right)
+                )
+                positions_to_update.append(pos)
+                return True, positions_to_update
             return False, []
-        return False, []
     return False, []
 
 
-def p2(lines: List[str]):
-    warehouse, movements, robot_loc, width, height = parse_warehouse_expanded(
-        lines
-    )
+def move(
+    warehouse: Dict[complex, str], positions_to_update, movement, robot_pos
+):
+    if movement == -1j:  # Up
+        # Move from top to bottom
+        positions_to_update.sort(key=lambda x: x.imag, reverse=False)
+    elif movement == 1j:  # Down
+        # Move from bottom to top
+        positions_to_update.sort(key=lambda x: x.imag, reverse=True)
+    elif movement == -1:  # Left
+        # Move from left to right
+        positions_to_update.sort(key=lambda x: x.real, reverse=False)
+    elif movement == 1:  # Right
+        # Move from right to left
+        positions_to_update.sort(key=lambda x: x.real, reverse=True)
+
+    for block_pos in positions_to_update:
+        current_block = warehouse[block_pos]
+        new_pos = block_pos + movement
+
+        warehouse[block_pos] = "."
+        warehouse[new_pos] = current_block
+
+        if current_block == "@":
+            robot_pos += movement
+
+    return robot_pos
+
+
+def plot_map(warehouse, width, height):
+    img = np.zeros((height, width, 3), dtype=float)
+
+    color_map = {
+        "#": [1, 0, 0],  # Red
+        "O": [1, 1, 0],  # Yellow
+        "@": [0, 0, 1],  # Blue
+        "[": [0, 1, 0],  # Green
+        "]": [1, 1, 0],  # Yellow
+        ".": [0, 0, 0],  # Black
+    }
+
+    for pos, block in warehouse.items():
+        x, y = int(pos.real), int(pos.imag)
+        if block in color_map:
+            img[y, x, :] = color_map[block]
+
+    return img
+
+
+def p1(lines: List[str]):
+    warehouse_map, movements, robot_pos = parse_warehouse(lines)
+
     for movement in movements:
-        continue_moving, blocks_to_update = step_expanded(
-            warehouse, robot_loc, movement
+        can_move, positions_to_update = step(
+            warehouse_map, robot_pos, movement
         )
-        if continue_moving:
-            if movement == -1j:
-                blocks_to_update = sorted(
-                    blocks_to_update, key=lambda x: x.imag, reverse=False
-                )
-            elif movement == 1j:
-                blocks_to_update = sorted(
-                    blocks_to_update, key=lambda x: x.imag, reverse=True
-                )
-            for idx, block_to_update in enumerate(blocks_to_update):
-                current_block = warehouse[block_to_update]
-                warehouse[block_to_update] = "."
-                warehouse[block_to_update + movement] = current_block
-                if idx == len(blocks_to_update) - 1:
-                    warehouse[block_to_update] = "."
-                if current_block == "@":
-                    robot_loc += movement
-    boxes = [k for k, v in warehouse.items() if v == "["]
-    gps_coordinates = sum([100 * box.imag + box.real for box in boxes])
+        if can_move:
+            robot_pos = move(
+                warehouse_map, positions_to_update, movement, robot_pos
+            )
+
+    # Gather box locations
+    boxes = [pos for pos, v in warehouse_map.items() if v == "O"]
+    gps_coordinates = sum(
+        [100 * int(box.imag) + int(box.real) for box in boxes]
+    )
+    return int(gps_coordinates)
+
+
+def p2(lines: List[str]):
+    warehouse_map, movements, robot_pos = parse_warehouse(lines, expanded=True)
+
+    for movement in movements:
+        can_move, positions_to_update = step(
+            warehouse_map, robot_pos, movement
+        )
+        if can_move:
+            robot_pos = move(
+                warehouse_map, positions_to_update, movement, robot_pos
+            )
+
+    # Gather box locations (left bracket)
+    left_brackets = [pos for pos, v in warehouse_map.items() if v == "["]
+    gps_coordinates = sum(
+        [100 * int(b.imag) + int(b.real) for b in left_brackets]
+    )
+
     return int(gps_coordinates)
 
 
