@@ -38,6 +38,15 @@ class Direction(Enum):
     BOT = 1j
     LEFT = -1
 
+    def flip(self):
+        opposite = {
+            Direction.TOP: Direction.BOT,
+            Direction.RIGHT: Direction.LEFT,
+            Direction.BOT: Direction.TOP,
+            Direction.LEFT: Direction.RIGHT,
+        }
+        return opposite[self]
+
 
 @dataclass(frozen=True)
 class Node:
@@ -46,63 +55,65 @@ class Node:
 
     def __lt__(self, other):
         """Defines comparison for the priority queue (optional)."""
-        return (self.pos.real, self.pos.imag) < (
+        return (
+            self.pos.real,
+            self.pos.imag,
+            self.direction.value.real,
+            self.direction.value.imag,
+        ) < (
             other.pos.real,
             other.pos.imag,
+            other.direction.value.real,
+            other.direction.value.imag,
         )
 
 
 def get_neighbors_distances(
     node: Node, graph: Dict[complex, str]
-) -> List[Tuple[complex, int]]:
+) -> List[Tuple[int, Node]]:
 
     next_nodes: List[Node] = []
 
     for direction in Direction:
-        cost = inf
-        next_pos = node.pos + direction.value
-        if next_pos in graph and graph[next_pos] != "#":
-            if direction == node.direction:
-                cost = 1
-            else:
-                cost = 1001
-            next_nodes.append((cost, Node(next_pos, direction)))
+        if direction != node.direction:
+            next_nodes.append((1000, Node(node.pos, direction)))
+        else:
+            next_pos = node.pos + direction.value
+            if next_pos in graph and graph[next_pos] != "#":
+                next_nodes.append((1, Node(next_pos, direction)))
     return next_nodes
 
 
+import heapq
+
+
 def djistra_with_weighted_angles(
-    graph: Dict[complex, str], start_pos: complex
+    graph: Dict[complex, str], start_nodes: complex
 ):
-    start_node = Node(start_pos, Direction.RIGHT)
-    visited: Set[Node] = set()
-    queue = PriorityQueue()
-    queue.put((0, start_node))
+    queue = []
     backward_path: Dict[Node, Node] = {}
-
     costs: Dict[Node, int] = {}
-    costs[start_node] = 0
 
-    while not queue.empty():
-        cost_to_node, node = queue.get()
-        visited.add(node)
+    # Initialize all start nodes
+    for start_node in start_nodes:
+        heapq.heappush(queue, (0, start_node))
+        costs[start_node] = 0
+
+    while queue:
+        cost_to_node, node = heapq.heappop(queue)
+        if costs[node] < cost_to_node:
+            continue
 
         for (
             cost_from_node_to_neighbor,
             neighbor_node,
         ) in get_neighbors_distances(node, graph):
-            if neighbor_node not in visited:
-                cost_to_neighbor = costs.setdefault(neighbor_node, inf)
-                cost_to_node = costs[node]
-                if (
-                    cost_to_neighbor
-                    > cost_to_node + cost_from_node_to_neighbor
-                ):
-                    cost_to_neighbor = (
-                        cost_to_node + cost_from_node_to_neighbor
-                    )
-                    costs[neighbor_node] = cost_to_neighbor
-                    backward_path[neighbor_node] = node
-                    queue.put((cost_to_neighbor, neighbor_node))
+            cost_to_neighbor = costs.get(neighbor_node, inf)
+            alternative_cost = cost_to_node + cost_from_node_to_neighbor
+            if cost_to_neighbor > alternative_cost:
+                costs[neighbor_node] = alternative_cost
+                backward_path[neighbor_node] = node
+                heapq.heappush(queue, (alternative_cost, neighbor_node))
     return backward_path, costs
 
 
@@ -110,7 +121,7 @@ def p1(lines: List[str]):
     maze, str_pos, end_pos = parse_maze(lines)
     backward_path, costs = djistra_with_weighted_angles(
         maze,
-        start_pos=str_pos,
+        start_nodes=[Node(str_pos, Direction.RIGHT)],
     )
     min_cost_for_each_incoming_direction = inf
     for direction in Direction:
@@ -122,7 +133,42 @@ def p1(lines: List[str]):
 
 
 def p2(lines: List[str]):
-    pass
+    maze, str_pos, end_pos = parse_maze(lines)
+
+    # Run Dijkstra from start position
+    backward_path_from_start, from_start_costs = djistra_with_weighted_angles(
+        maze,
+        start_nodes=[
+            Node(str_pos, Direction.RIGHT)
+        ],  # Start Dijkstra from 'S'
+    )
+
+    # Run Dijkstra from the end position in all 4 directions
+    backward_path_from_end, from_end_costs = djistra_with_weighted_angles(
+        maze,
+        start_nodes=[Node(end_pos, direction) for direction in Direction],
+    )
+    min_cost_for_each_incoming_direction = inf
+    for direction in Direction:
+        node = Node(end_pos, direction)
+        cost = from_start_costs.setdefault(node, inf)
+        if cost < min_cost_for_each_incoming_direction:
+            min_cost_for_each_incoming_direction = cost
+    count = 0
+    node_set = set()
+    for node_in in from_start_costs:
+        for direction in Direction:
+            node_out = Node(node_in.pos, node_in.direction.flip())
+
+            if node_in in from_start_costs and node_out in from_end_costs:
+                total_cost = from_start_costs[node_in] + from_end_costs.get(
+                    node_out, inf
+                )
+                if total_cost == min_cost_for_each_incoming_direction:
+                    if node_in.pos not in node_set:
+                        node_set.add(node_in.pos)
+                        count += 1
+    return count
 
 
 if __name__ == "__main__":
