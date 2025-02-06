@@ -1,17 +1,16 @@
 # pylint: disable=C0114,C0116
 # pylint: disable=C0413,E0611
+import heapq
 import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from queue import PriorityQueue
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Tuple
 
 from numpy import inf
 
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
-from profile import timeit
 
 
 def parse_maze(lines: List[str]):
@@ -54,17 +53,12 @@ class Node:
     direction: Direction
 
     def __lt__(self, other):
-        """Defines comparison for the priority queue (optional)."""
         return (
             self.pos.real,
             self.pos.imag,
-            self.direction.value.real,
-            self.direction.value.imag,
         ) < (
             other.pos.real,
             other.pos.imag,
-            other.direction.value.real,
-            other.direction.value.imag,
         )
 
 
@@ -84,17 +78,12 @@ def get_neighbors_distances(
     return next_nodes
 
 
-import heapq
-
-
 def djistra_with_weighted_angles(
     graph: Dict[complex, str], start_nodes: complex
 ):
     queue = []
-    backward_path: Dict[Node, Node] = {}
     costs: Dict[Node, int] = {}
 
-    # Initialize all start nodes
     for start_node in start_nodes:
         heapq.heappush(queue, (0, start_node))
         costs[start_node] = 0
@@ -112,14 +101,13 @@ def djistra_with_weighted_angles(
             alternative_cost = cost_to_node + cost_from_node_to_neighbor
             if cost_to_neighbor > alternative_cost:
                 costs[neighbor_node] = alternative_cost
-                backward_path[neighbor_node] = node
                 heapq.heappush(queue, (alternative_cost, neighbor_node))
-    return backward_path, costs
+    return costs
 
 
 def p1(lines: List[str]):
     maze, str_pos, end_pos = parse_maze(lines)
-    backward_path, costs = djistra_with_weighted_angles(
+    costs = djistra_with_weighted_angles(
         maze,
         start_nodes=[Node(str_pos, Direction.RIGHT)],
     )
@@ -135,16 +123,12 @@ def p1(lines: List[str]):
 def p2(lines: List[str]):
     maze, str_pos, end_pos = parse_maze(lines)
 
-    # Run Dijkstra from start position
-    backward_path_from_start, from_start_costs = djistra_with_weighted_angles(
+    from_start_costs = djistra_with_weighted_angles(
         maze,
-        start_nodes=[
-            Node(str_pos, Direction.RIGHT)
-        ],  # Start Dijkstra from 'S'
+        start_nodes=[Node(str_pos, Direction.RIGHT)],
     )
 
-    # Run Dijkstra from the end position in all 4 directions
-    backward_path_from_end, from_end_costs = djistra_with_weighted_angles(
+    from_end_costs = djistra_with_weighted_angles(
         maze,
         start_nodes=[Node(end_pos, direction) for direction in Direction],
     )
@@ -154,21 +138,17 @@ def p2(lines: List[str]):
         cost = from_start_costs.setdefault(node, inf)
         if cost < min_cost_for_each_incoming_direction:
             min_cost_for_each_incoming_direction = cost
-    count = 0
-    node_set = set()
-    for node_in in from_start_costs:
+
+    pos_set = set()
+    for node_in, cost_in in from_start_costs.items():
         for direction in Direction:
             node_out = Node(node_in.pos, node_in.direction.flip())
 
-            if node_in in from_start_costs and node_out in from_end_costs:
-                total_cost = from_start_costs[node_in] + from_end_costs.get(
-                    node_out, inf
-                )
+            if node_out in from_end_costs:
+                total_cost = cost_in + from_end_costs.get(node_out, inf)
                 if total_cost == min_cost_for_each_incoming_direction:
-                    if node_in.pos not in node_set:
-                        node_set.add(node_in.pos)
-                        count += 1
-    return count
+                    pos_set.add(node_in.pos)
+    return len(pos_set)
 
 
 if __name__ == "__main__":
