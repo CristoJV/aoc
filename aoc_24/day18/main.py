@@ -76,13 +76,21 @@ def dijistra(
                     priority_queue, (alternative_cost, neighbor_pos)
                 )
                 path[neighbor_pos] = pos
+    return path
+
+
+def retrieve_best_path(paths, start_pos, end_pos):
     best_path = []
-    pos = (limits[0] - 1, limits[1] - 1)
-    while pos != (0, 0):
-        pos = path[pos]
+    if end_pos not in paths:
+        return False, []
+    pos = end_pos
+    best_path.append(end_pos)
+    while pos != start_pos:
+        pos = paths[pos]
         best_path.append(pos)
+    best_path.append(start_pos)
     best_path.reverse()
-    return best_path
+    return True, best_path
 
 
 def plot_map(corrupted_positions, limits):
@@ -95,14 +103,36 @@ def plot_map(corrupted_positions, limits):
 
 def p1(lines: List[str], limits=(7, 7), fallen_bytes: int = 1024):
     corrupted_positions = parse_corrupted_locations(lines)
-    best_path = dijistra(
-        (0, 0), corrupted_positions[:fallen_bytes], limits=limits
+    paths = dijistra((0, 0), corrupted_positions[:fallen_bytes], limits=limits)
+    is_there_a_path, path = retrieve_best_path(
+        paths, start_pos=(0, 0), end_pos=(limits[0] - 1, limits[1] - 1)
     )
-    return len(best_path)
+    return len(path) - 2
 
 
 def p2(lines: List[str], limits: Tuple[int, int], fallen_bytes: int):
-    pass
+    corrupted_positions = parse_corrupted_locations(lines)
+    start_pos = (0, 0)
+    end_pos = (limits[0] - 1, limits[1] - 1)
+    paths = dijistra(
+        start_pos, corrupted_positions[:fallen_bytes], limits=limits
+    )
+    is_there_a_path, path = retrieve_best_path(
+        paths, start_pos, end_pos=end_pos
+    )
+    idx = fallen_bytes
+    while is_there_a_path:
+        idx += 1
+        if idx >= len(corrupted_positions):
+            return corrupted_positions[-1]
+        if corrupted_positions[idx] in path:
+            paths = dijistra(
+                start_pos, corrupted_positions[: idx + 1], limits=limits
+            )
+            is_there_a_path, path = retrieve_best_path(
+                paths, start_pos, end_pos=end_pos
+            )
+    return corrupted_positions[idx]
 
 
 if __name__ == "__main__":
