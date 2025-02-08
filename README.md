@@ -30,9 +30,9 @@ Below is the progress for each year, showing the status of each challenge and th
 | 1️⃣3️⃣ | ⭐⭐ |  |
 | 1️⃣4️⃣ | ⭐⭐|  (Part 1) - **Modular Arithmetic** <br><br> (Part 2) - **2D Entropy using Kernel-based Joint Histogram** <br> Instead of considering simple pixel-pair distributions (which only consider two adjacent pixels at a time), this approach evaluates local spatial dependencies using a 5-pixel cross-shaped kernel centered around each pixel: {(center, top, right, bot, left)}. The joint histogram is built by counting occurrences of these patterns throughout the image, forming a probability distribution. The entropy is then computed to measure the randomness or structure of these patterns. The key insight was to find the image with the minimum entropy, which led to detecting the hidden christmas tree. |
 | 1️⃣5️⃣ |⭐⭐| (Part 1) - **Recursive steps** |
-| 1️⃣6️⃣ |  |  |
-| 1️⃣7️⃣ |  |  |
-| 1️⃣8️⃣ |  |  |
+| 1️⃣6️⃣ |⭐⭐|  |
+| 1️⃣7️⃣ |⭐⭐|  |
+| 1️⃣8️⃣ |⭐⭐|  |
 | 1️⃣9️⃣ |  |  |
 | 2️⃣0️⃣ |  |  |
 | 2️⃣1️⃣ |  |  |
