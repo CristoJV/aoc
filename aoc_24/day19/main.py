@@ -2,7 +2,7 @@
 # pylint: disable=C0413,E0611
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
@@ -16,43 +16,43 @@ def parse_patterns(lines: List[str]) -> Tuple[List[str], List[str]]:
     return available_patterns, desired_patterns
 
 
-def is_valid(desired_pattern: str, available_patterns: Set[str]) -> bool:
+def is_valid(
+    desired_pattern: str,
+    available_patterns: Set[str],
+    memo: Dict[str, Tuple[bool, list]] = None,
+) -> Tuple[bool, list]:
+    if memo is None:
+        memo = {}
+
+    if desired_pattern in memo:
+        return memo[desired_pattern]
 
     if desired_pattern in available_patterns:
+        memo[desired_pattern] = (True, [desired_pattern])
         return True, [desired_pattern]
 
-    if len(desired_pattern) in [0, 1]:
+    if len(desired_pattern) <= 1:
+        memo[desired_pattern] = (False, [])
         return False, []
-    # Check the rest of the pattern
 
-    half = len(desired_pattern) // 2
-    chain_left = desired_pattern[:half]
-    chain_right = desired_pattern[half:]
+    for i in range(1, len(desired_pattern)):
+        chain_left = desired_pattern[:i]
+        chain_right = desired_pattern[i:]
 
-    is_valid_left, left_patterns = is_valid(chain_left, available_patterns)
-    if is_valid_left:
+        is_valid_left, left_patterns = is_valid(
+            chain_left, available_patterns, memo
+        )
         is_valid_right, right_patterns = is_valid(
-            chain_right, available_patterns
+            chain_right, available_patterns, memo
         )
 
-    if is_valid_left and is_valid_right:
-        available_patterns.add("".join(left_patterns + right_patterns))
-        return True, left_patterns + right_patterns
+        if is_valid_left and is_valid_right:
+            full_pattern = "".join(left_patterns + right_patterns)
+            available_patterns.add(full_pattern)
+            memo[desired_pattern] = (True, left_patterns + right_patterns)
+            return True, left_patterns + right_patterns
 
-    half = len(desired_pattern) // 2 - 2
-    chain_left = desired_pattern[:half]
-    chain_right = desired_pattern[half:]
-
-    is_valid_left, left_patterns = is_valid(chain_left, available_patterns)
-    if is_valid_left:
-        is_valid_right, right_patterns = is_valid(
-            chain_right, available_patterns
-        )
-
-    if is_valid_left and is_valid_right:
-        available_patterns.add("".join(left_patterns + right_patterns))
-        return True, left_patterns + right_patterns
-
+    memo[desired_pattern] = (False, [])
     return False, []
 
 
