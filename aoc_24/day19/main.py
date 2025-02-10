@@ -71,8 +71,30 @@ def p1(lines: List[str]):
     return valid
 
 
+def all_available_solutions(
+    desired_pattern: str, available_patterns: Set[str]
+):
+    n = len(desired_pattern)
+    dp = [0] * (n + 1)
+    dp[0] = 1
+
+    for i in range(n):
+        if dp[i] != 0:
+            for pat in available_patterns:
+                length = len(pat)
+                if i + length <= n and desired_pattern[i : i + length] == pat:
+                    dp[i + length] += dp[i]
+
+    return dp[n]
+
+
 def p2(lines: List[str]):
-    pass
+    valid = 0
+    available_patterns, desired_patterns = parse_patterns(lines)
+    for desired_pattern in desired_patterns:
+        counts = all_available_solutions(desired_pattern, available_patterns)
+        valid += counts
+    return valid
 
 
 if __name__ == "__main__":
