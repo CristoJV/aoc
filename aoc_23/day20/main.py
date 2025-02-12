@@ -121,7 +121,53 @@ def part_1(lines):
 
 
 def part_2(lines):
-    pass
+    modules, broascast = parse_circuit(lines)
+    queue = deque()
+    low_pulses = 0
+    high_pulses = 0
+    iterations = 1
+    found = False
+    signal_receivers = ["dh", "mk", "vf", "rn"]
+    signal_receivers_iterations = {}
+    while True:
+        low_pulses += 1
+        for init in broascast:
+            queue.append(Signal("broadcast", init, SignalState.LOW))
+        while queue:
+            signal = queue.popleft()
+            if signal.state == SignalState.HIGH:
+                high_pulses += 1
+            else:
+                low_pulses += 1
+            if signal.receiver in modules:
+                signals = modules[signal.receiver].update(signal)
+                for sig in signals:
+                    queue.append(sig)
+            if (
+                signal.receiver in ["dh", "mk", "vf", "rn"]
+                and signal.state == SignalState.LOW
+            ):
+                if signal.receiver not in signal_receivers_iterations:
+                    signal_receivers_iterations[signal.receiver] = int(
+                        iterations
+                    )
+                    signal_receivers.pop()
+                if len(signal_receivers) == 0:
+                    found = True
+                    break
+        if found:
+            break
+        iterations += 1
+
+    def mcm(a, b):
+        return int(abs(a * b) / math.gcd(a, b))
+
+    def mcm_all(numbers):
+        return functools.reduce(mcm, numbers)
+
+    mcm_value = mcm_all(signal_receivers_iterations.values())
+
+    return mcm_value
 
 
 if __name__ == "__main__":
