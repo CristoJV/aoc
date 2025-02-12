@@ -18,39 +18,6 @@ def parse_debugger(lines: List[str]):
     return int(a), int(b), int(c), program
 
 
-def p1(lines: List[str]):
-    a, b, c, program = parse_debugger(lines)
-    output = []
-
-    # Using mutable operands
-    operands: List[int] = [0, 1, 2, 3, a, b, c, -1]
-    pointer: int = 0
-
-    while pointer < len(program):
-        operator = program[pointer]
-        x = program[pointer + 1]
-        match operator:
-            case 0:  # adv
-                operands[4] = int(operands[4] / (2 ** (operands[x])))
-            case 1:  # bxl
-                operands[5] = operands[5] ^ x
-            case 2:  # bst
-                operands[5] = operands[x] % 8
-            case 3:  # jnz
-                if operands[4] != 0:
-                    pointer = x - 2
-            case 4:  # bxc
-                operands[5] = operands[5] ^ operands[6]
-            case 5:  # out
-                output.append(operands[x] % 8)
-            case 6:  # bdv
-                operands[5] = int(operands[4] / (2 ** (operands[x])))
-            case 7:  # cdv
-                operands[6] = int(operands[4] / (2 ** (operands[x])))
-        pointer += 2
-    return ",".join(map(str, output))
-
-
 def get_output(a, program):
     output = []
     operands: List[int] = [0, 1, 2, 3, a, 0, 0, -1]
@@ -78,6 +45,12 @@ def get_output(a, program):
                 operands[6] = int(operands[4] / (2 ** (operands[x])))
         pointer += 2
     return output
+
+
+def p1(lines: List[str]):
+    a, _, _, program = parse_debugger(lines)
+    output = get_output(a, program)
+    return ",".join(map(str, output))
 
 
 def dfs_exploration(a: int, depth: int, program: List[int]):
