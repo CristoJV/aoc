@@ -97,14 +97,14 @@ class Conjuntion:
         return signals
 
 
-def part_1(lines):
-    modules, broascast = parse_circuit(lines)
+def p1(lines):
+    modules, broadcast = parse_circuit(lines)
     queue = deque()
     low_pulses = 0
     high_pulses = 0
     for _ in range(1000):
         low_pulses += 1
-        for init in broascast:
+        for init in broadcast:
             queue.append(Signal("broadcast", init, SignalState.LOW))
 
         while queue:
@@ -120,61 +120,46 @@ def part_1(lines):
     return low_pulses * high_pulses
 
 
-def part_2(lines):
-    modules, broascast = parse_circuit(lines)
+def p2(lines):
+    modules, broadcast = parse_circuit(lines)
     queue = deque()
-    low_pulses = 0
-    high_pulses = 0
-    iterations = 1
-    found = False
-    signal_receivers = ["dh", "mk", "vf", "rn"]
+    signal_receivers = {"dh", "mk", "vf", "rn"}
     signal_receivers_iterations = {}
+    iterations = 0
     while True:
-        low_pulses += 1
-        for init in broascast:
+        iterations += 1
+        for init in broadcast:
             queue.append(Signal("broadcast", init, SignalState.LOW))
         while queue:
             signal = queue.popleft()
-            if signal.state == SignalState.HIGH:
-                high_pulses += 1
-            else:
-                low_pulses += 1
             if signal.receiver in modules:
                 signals = modules[signal.receiver].update(signal)
                 for sig in signals:
                     queue.append(sig)
+
+            # Track first LOW signal for receivers
             if (
-                signal.receiver in ["dh", "mk", "vf", "rn"]
+                signal.receiver in signal_receivers
                 and signal.state == SignalState.LOW
             ):
                 if signal.receiver not in signal_receivers_iterations:
-                    signal_receivers_iterations[signal.receiver] = int(
-                        iterations
+                    signal_receivers_iterations[signal.receiver] = iterations
+
+                # Stop once all receivers are recorded
+                # Return the LCM of the first LOW signal iterations for
+                # each parent conjuntion module
+                if len(signal_receivers_iterations) == len(signal_receivers):
+                    return functools.reduce(
+                        lambda a, b: abs(a * b) // math.gcd(a, b),
+                        signal_receivers_iterations.values(),
                     )
-                    signal_receivers.pop()
-                if len(signal_receivers) == 0:
-                    found = True
-                    break
-        if found:
-            break
-        iterations += 1
-
-    def mcm(a, b):
-        return int(abs(a * b) / math.gcd(a, b))
-
-    def mcm_all(numbers):
-        return functools.reduce(mcm, numbers)
-
-    mcm_value = mcm_all(signal_receivers_iterations.values())
-
-    return mcm_value
 
 
 if __name__ == "__main__":
-    with open("input.txt") as f:
-        lines = f.readlines()
-
-    logging.basicConfig(level=logging.INFO)
-
-    logging.info(f"Part 1: {part_1(lines)}")
-    logging.info(f"Part 2: {part_2(lines)}")
+    testing: bool = False
+    with open(
+        "input.txt" if not testing else "test.txt", encoding="utf8"
+    ) as f:
+        input_lines = f.readlines()
+        print(f"First part: {p1(input_lines)}")
+        print(f"Second part: {p2(input_lines)}")
