@@ -43,7 +43,7 @@ This table tracks my progress for each year, showing:
 | 1️⃣7️⃣ | ⭐⭐ |  |  |
 | 1️⃣8️⃣ | ⭐⭐ |  |  |
 | 1️⃣9️⃣ | ⭐⭐ |  |  |
-| 2️⃣0️⃣ | ⬜ |  |  |
+| 2️⃣0️⃣ | ⭐▶️| **Djistra** <br><br> Using array indexing instead of complex dictionaries. |  |
 | 2️⃣1️⃣ | ⬜ |  |  |
 | 2️⃣2️⃣ | ⭐⭐ | **Memoization** | ⚡ Could by optimized by skipping redundant price iterations |
 | 2️⃣3️⃣ | ⬜ |  |  |
