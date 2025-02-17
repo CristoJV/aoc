@@ -48,7 +48,7 @@ This table tracks my progress for each year, showing:
 | 2️⃣2️⃣ | ⭐⭐ | **Memoization** | ⚡ Could by optimized by skipping redundant price iterations |
 | 2️⃣3️⃣ | ⬜ |  |  |
 | 2️⃣4️⃣ | ⭐ |  |  |
-| 2️⃣5️⃣ | ⬜ |  |  |
+| 2️⃣5️⃣ | ⭐ | ⚡ Parsing the input into locks and keys could by optimized |  |
 
 ---
 
