@@ -46,7 +46,7 @@ This table tracks my progress for each year, showing:
 | 2️⃣0️⃣ | ⭐▶️| **Djistra** <br> Using array indexing instead of complex dictionaries. The algorithm precomputes two cost maps: one tracking the shortest path from the start to all points and another from the end to all points. To handle potential shortcuts, the total cost for each one is determined by summing the cost from the start to the shortcut's entry and the cost from the end to the shorcut's exit, considering both possible directions.|  |
 | 2️⃣1️⃣ | ⬜ |  |  |
 | 2️⃣2️⃣ | ⭐⭐ | **Memoization** | ⚡ Could by optimized by skipping redundant price iterations |
-| 2️⃣3️⃣ | ⬜ |  |  |
+| 2️⃣3️⃣ | ⭐ | **Lexicographic ordering** <br> Processing nodes in a fixed order (i.e. alphabetically) to avoid redundant computations when detecting triangle cycles. |  |
 | 2️⃣4️⃣ | ⭐ |  |  |
 | 2️⃣5️⃣ | ⭐ | ⚡ Parsing the input into locks and keys could by optimized |  |
 
