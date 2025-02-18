@@ -2,41 +2,37 @@
 # pylint: disable=C0413,E0611
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
-from copy import deepcopy
-from profile import timeit
 
 
 def parse_network_map(lines: list[str]):
-    network_map: Dict[str, List[str]] = {}
+    network_map: Dict[str, Set[str]] = {}
     for line in lines:
         in_node, out_node = line.strip().split("-")
-        network_map.setdefault(in_node, []).append(out_node)
-        network_map.setdefault(out_node, []).append(in_node)
+        network_map.setdefault(in_node, set()).add(out_node)
+        network_map.setdefault(out_node, set()).add(in_node)
     return network_map
 
 
 def p1(lines: List[str]):
     network_map = parse_network_map(lines)
-    visited_map = deepcopy(network_map)
 
-    trios: List[Tuple[str, str, str]] = []
-    for in_node, mid_nodes in network_map.items():
-        for idx, mid_node in enumerate(mid_nodes):
-            for out_node in visited_map[mid_node]:
-                for rein_node in visited_map[out_node]:
-                    print(in_node, mid_node, out_node, rein_node)
-                    if rein_node == in_node:
-                        trios.append((in_node, mid_node, out_node))
-                if len(visited_map[mid_node]):
-                    visited_map[mid_node].pop()
-            if len(visited_map[in_node]):
-                visited_map[in_node].pop()
+    triangles: List[Tuple[int, int, int]] = []
+    t_triangles: List[Tuple[int, int, int]] = []
 
-    print(len(trios))
+    for u in sorted(network_map):
+        for v in network_map[u]:
+            if v > u:
+                for w in network_map[v]:
+                    if w > v and w in network_map[u]:
+                        triangle = tuple([u, v, w])
+                        triangles.append(triangle)
+                        if u[0] == "t" or v[0] == "t" or w[0] == "t":
+                            t_triangles.append(triangle)
+    return len(t_triangles)
 
 
 def p2(lines: List[str]):
@@ -44,7 +40,7 @@ def p2(lines: List[str]):
 
 
 if __name__ == "__main__":
-    testing: bool = True
+    testing: bool = False
     with open(
         "input.txt" if not testing else "test.txt", encoding="utf8"
     ) as f:
