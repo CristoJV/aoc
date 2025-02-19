@@ -7,13 +7,15 @@ from typing import Dict, List, Set, Tuple
 utils_path = Path(__file__).resolve().parents[2] / "utils"
 sys.path.insert(0, str(utils_path))
 
+from profile import timeit
+
 
 def parse_network_map(lines: list[str]):
     network_map: Dict[str, Set[str]] = {}
     for line in lines:
         in_node, out_node = line.strip().split("-")
-        network_map.setdefault(in_node, set()).add(out_node)
-        network_map.setdefault(out_node, set()).add(in_node)
+        network_map.setdefault(in_node, []).append(out_node)
+        network_map.setdefault(out_node, []).append(in_node)
     return network_map
 
 
@@ -35,8 +37,37 @@ def p1(lines: List[str]):
     return len(t_triangles)
 
 
+@timeit()
 def p2(lines: List[str]):
-    pass
+    network_map = parse_network_map(lines)
+    combinations = []
+    for key, val in network_map.items():
+        val.append(key)
+        val = set(sorted(val))
+        combinations.append(val)
+
+    intersected_combinations = {}
+    for j, combination_a in enumerate(combinations):
+        for i, combination_b in enumerate(combinations):
+            if i > j:
+                combination = frozenset(combination_a & combination_b)
+                if combination:
+                    intersected_combinations.setdefault(combination, 0)
+                    intersected_combinations[combination] += 1
+    sorted_combinations = dict(
+        sorted(
+            intersected_combinations.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+    )
+    best_combination = None
+    for combination, count in sorted_combinations.items():
+        if len(combination) <= count:
+            best_combination = combination
+            break
+    best_combination = ",".join(sorted(best_combination))
+    return best_combination
 
 
 if __name__ == "__main__":
