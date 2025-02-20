@@ -28,7 +28,9 @@ def p1(lines: List[str]):
 
 
 def p2(lines: List[str]):
-    pass
+    elfs = parse_calories(lines)
+    sorted_elfs = sorted(elfs, reverse=True)
+    return sorted_elfs[0] + sorted_elfs[1] + sorted_elfs[2]
 
 
 if __name__ == "__main__":
