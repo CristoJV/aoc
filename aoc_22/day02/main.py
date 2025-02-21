@@ -25,7 +25,19 @@ def p1(lines: List[str]):
 
 
 def p2(lines: List[str]):
-    pass
+    combination = [
+        " ",
+        "BX",
+        "CX",
+        "AX",
+        "AY",
+        "BY",
+        "CY",
+        "CZ",
+        "AZ",
+        "BZ",
+    ]
+    return sum([combination.index(line[0] + line[2]) for line in lines])
 
 
 if __name__ == "__main__":
